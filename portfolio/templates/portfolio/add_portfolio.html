@@ -1,11 +1,56 @@
 {% extends 'portfolio/base.html' %}
+
 {% block content %}
 <div class="container mt-4">
-    <h2>Add Portfolio</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Save</button>
-    </form>
+    <h2 class="text-center mb-4">Add Portfolio</h2>
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Portfolio Name -->
+                        <div class="mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">Portfolio Name</label>
+                            {{ form.name }}
+                            {% if form.name.errors %}
+                                <div class="text-danger">
+                                    {{ form.name.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Goal Amount -->
+                        <div class="mb-3">
+                            <label for="{{ form.goal_amount.id_for_label }}" class="form-label">Goal Amount</label>
+                            {{ form.goal_amount }}
+                            {% if form.goal_amount.errors %}
+                                <div class="text-danger">
+                                    {{ form.goal_amount.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Risk Tolerance -->
+                        <div class="mb-3">
+                            <label for="{{ form.risk_tolerance.id_for_label }}" class="form-label">Risk Tolerance</label>
+                            {{ form.risk_tolerance }}
+                            {% if form.risk_tolerance.errors %}
+                                <div class="text-danger">
+                                    {{ form.risk_tolerance.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Save Portfolio</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
