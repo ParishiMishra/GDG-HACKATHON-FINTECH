@@ -1,5 +1,9 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.decorators import login_required
 from .models import Portfolio, Investment
+from .forms import PortfolioForm, InvestmentForm
 import requests
 
 ALPHA_VANTAGE_API_KEY = '3YCCC7YIBIR1POWY'
@@ -10,6 +14,7 @@ def get_stock_data(symbol):
     data = response.json()
     return data
 
+@login_required
 def dashboard(request):
     portfolios = Portfolio.objects.filter(user=request.user)
     portfolio_data = []
@@ -35,6 +40,14 @@ def dashboard(request):
                 'roi': ((current_value - (investment.purchase_price * investment.quantity)) / (investment.purchase_price * investment.quantity)) * 100,
             })
 
+        # Calculate portfolio progress
+        if portfolio.goal_amount > 0:
+            progress = (total_value / portfolio.goal_amount) * 100
+            if progress > 100:
+                progress = 100  # Ensure it doesn't exceed 100%
+        else:
+            progress = 0  # If goal_amount is 0, set progress to 0
+
         portfolio_roi = ((total_value - total_cost) / total_cost) * 100 if total_cost != 0 else 0
         portfolio_data.append({
             'portfolio': portfolio,
@@ -42,6 +55,45 @@ def dashboard(request):
             'total_value': total_value,
             'total_cost': total_cost,
             'portfolio_roi': portfolio_roi,
+            'progress': progress,  # Add progress to the context
         })
 
     return render(request, 'portfolio/dashboard.html', {'portfolio_data': portfolio_data})
+
+def signup(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)  # Log the user in after signup
+            return redirect('dashboard')  # Redirect to the dashboard
+    else:
+        form = UserCreationForm()
+    return render(request, 'portfolio/signup.html', {'form': form})
+
+@login_required
+def add_portfolio(request):
+    if request.method == 'POST':
+        form = PortfolioForm(request.POST)
+        if form.is_valid():
+            portfolio = form.save(commit=False)
+            portfolio.user = request.user
+            portfolio.save()
+            return redirect('dashboard')
+    else:
+        form = PortfolioForm()
+    return render(request, 'portfolio/add_portfolio.html', {'form': form})
+
+@login_required
+def add_investment(request, portfolio_id):
+    portfolio = get_object_or_404(Portfolio, id=portfolio_id, user=request.user)
+    if request.method == 'POST':
+        form = InvestmentForm(request.POST)
+        if form.is_valid():
+            investment = form.save(commit=False)
+            investment.portfolio = portfolio
+            investment.save()
+            return redirect('dashboard')
+    else:
+        form = InvestmentForm()
+    return render(request, 'portfolio/add_investment.html', {'form': form, 'portfolio': portfolio})

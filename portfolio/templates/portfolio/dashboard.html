@@ -1,17 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
-</head>
-<body>
-    <h1>Welcome to WealthWhiz</h1>
-    <h2>Your Portfolios</h2>
-    <ul>
-        {% for portfolio in portfolios %}
-            <li>{{ portfolio.name }} - Goal: ${{ portfolio.goal_amount }}</li>
-        {% endfor %}
-    </ul>
-</body>
-</html>
+{% extends 'portfolio/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">Your Investment Dashboard</h1>
+    <a href="{% url 'add_portfolio' %}" class="btn btn-success mb-3">Add Portfolio</a>
+
+    {% for portfolio in portfolio_data %}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h3 class="card-title">{{ portfolio.portfolio.name }}</h3>
+            <a href="{% url 'add_investment' portfolio.portfolio.id %}" class="btn btn-primary btn-sm mb-3">Add Investment</a>
+            <p><strong>Goal:</strong> ${{ portfolio.portfolio.goal_amount }}</p>
+            
+            <!-- Goal Progress -->
+            <div class="progress mb-3">
+                {% if portfolio.portfolio.goal_amount > 0 %}
+                    {% with progress=portfolio.progress|default:0 %}
+                        <div class="progress-bar {% if progress >= 100 %} bg-success {% else %} bg-warning {% endif %}"
+                             role="progressbar"
+                             
+                             aria-valuenow="{{ progress|floatformat:0 }}"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
+                            {{ progress|floatformat:0 }}%
+                        </div>
+                    {% endwith %}
+                {% else %}
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                        0%
+                    </div>
+                {% endif %}
+            </div>
+
+            <p><strong>Total Value:</strong> ${{ portfolio.total_value|floatformat:2 }}</p>
+            <p><strong>Total Cost:</strong> ${{ portfolio.total_cost|floatformat:2 }}</p>
+            <p>
+                <strong>Portfolio ROI:</strong>
+                <span class="{% if portfolio.portfolio_roi >= 0 %} text-success {% else %} text-danger {% endif %}">
+                    {{ portfolio.portfolio_roi|floatformat:2 }}%
+                </span>
+            </p>
+
+            <!-- Investment Table -->
+            <table class="table table-bordered mt-3">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Stock</th>
+                        <th>Quantity</th>
+                        <th>Purchase Price</th>
+                        <th>Current Price</th>
+                        <th>Current Value</th>
+                        <th>ROI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for investment in portfolio.investments %}
+                    <tr>
+                        <td>{{ investment.symbol }}</td>
+                        <td>{{ investment.quantity }}</td>
+                        <td>${{ investment.purchase_price|floatformat:2 }}</td>
+                        <td>${{ investment.current_price|floatformat:2 }}</td>
+                        <td>${{ investment.current_value|floatformat:2 }}</td>
+                        <td class="{% if investment.roi >= 0 %} text-success {% else %} text-danger {% endif %}">
+                            {{ investment.roi|floatformat:2 }}%
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
